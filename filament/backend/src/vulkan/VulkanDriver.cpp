@@ -1458,7 +1458,7 @@ void VulkanDriver::readPixels(Handle<HwRenderTarget> src, uint32_t x, uint32_t y
 
     const VkCommandBuffer cmdbuffer = mContext.commands->get().cmdbuffer;
 
-    // TODO: staging should just use the GENERAL layout
+    // TODO: staging should just use the GENERAL layout zamboni
     transitionImageLayout(cmdbuffer, {
         .image = stagingImage,
         .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
@@ -1510,7 +1510,7 @@ void VulkanDriver::readPixels(Handle<HwRenderTarget> src, uint32_t x, uint32_t y
         .layerCount = 1,
     };
 
-    // FIXME: the content of the source may be destroyed because of VK_IMAGE_LAYOUT_UNDEFINED
+    // FIXME: the content of the source may be destroyed because of VK_IMAGE_LAYOUT_UNDEFINED zamboni
     VkImage srcImage = srcTarget->getColor(mContext.currentSurface, 0).image;
     transitionImageLayout(cmdbuffer, {
         .image = srcImage,
@@ -1533,7 +1533,7 @@ void VulkanDriver::readPixels(Handle<HwRenderTarget> src, uint32_t x, uint32_t y
 
     if (srcTexture || mContext.currentSurface->presentQueue) {
         const VkImageLayout present = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-        // FIXME: the content of image we just blitted into may be destroyed because of VK_IMAGE_LAYOUT_UNDEFINED
+        // FIXME: the content of image we just blitted into may be destroyed because of VK_IMAGE_LAYOUT_UNDEFINED zamboni
         transitionImageLayout(cmdbuffer, {
             .image = srcImage,
             .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
@@ -1545,7 +1545,7 @@ void VulkanDriver::readPixels(Handle<HwRenderTarget> src, uint32_t x, uint32_t y
             .dstAccessMask = VK_ACCESS_SHADER_READ_BIT,
         });
     } else {
-        // FIXME: the content of image we just blitted into may be destroyed because of VK_IMAGE_LAYOUT_UNDEFINED
+        // FIXME: the content of image we just blitted into may be destroyed because of VK_IMAGE_LAYOUT_UNDEFINED zamboni
         transitionImageLayout(cmdbuffer, {
             .image = srcImage,
             .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
@@ -1559,28 +1559,22 @@ void VulkanDriver::readPixels(Handle<HwRenderTarget> src, uint32_t x, uint32_t y
     }
 
     // Transition the staging image layout to GENERAL.
-
-    // TODO: why is this not using transitionImageLayout() ?
-    VkImageMemoryBarrier barrier = {
-        .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
-        .srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
-        .dstAccessMask = VK_ACCESS_MEMORY_READ_BIT,
+    transitionImageLayout(cmdbuffer, {
+        .image = stagingImage,
         .oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
         .newLayout = VK_IMAGE_LAYOUT_GENERAL,
-        .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-        .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-        .image = stagingImage,
-        .subresourceRange = {
+        .subresources = {
             .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
             .baseMipLevel = 0,
             .levelCount = 1,
             .baseArrayLayer = 0,
             .layerCount = 1,
-        }
-    };
-
-    vkCmdPipelineBarrier(cmdbuffer, VK_PIPELINE_STAGE_TRANSFER_BIT,
-            VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+        },
+        .srcStage = VK_PIPELINE_STAGE_TRANSFER_BIT,
+        .srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
+        .dstStage = VK_PIPELINE_STAGE_TRANSFER_BIT,
+        .dstAccessMask = VK_ACCESS_MEMORY_READ_BIT,
+    });
 
     // TODO: don't flush/wait here -- we should do this asynchronously
 

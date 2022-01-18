@@ -333,6 +333,7 @@ VkFormat VulkanContext::findSupportedFormat(utils::Slice<VkFormat> candidates,
     return VK_FORMAT_UNDEFINED;
 }
 
+// zamboni TODO: remove this function.
 VkImageLayout VulkanContext::getTextureLayout(TextureUsage usage) const {
     // Filament sometimes samples from depth while it is bound to the current render target, (e.g.
     // SSAO does this while depth writes are disabled) so let's keep it simple and use GENERAL for

@@ -501,6 +501,19 @@ VkComponentMapping getSwizzleMap(TextureSwizzle swizzle[4]) {
     return map;
 }
 
+VkImageViewType getImageViewType(SamplerType target) {
+    switch (target) {
+        case SamplerType::SAMPLER_CUBEMAP:
+            return VK_IMAGE_VIEW_TYPE_CUBE;
+        case SamplerType::SAMPLER_2D_ARRAY:
+            return VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+        case  SamplerType::SAMPLER_3D:
+            return VK_IMAGE_VIEW_TYPE_3D;
+        default:
+            return VK_IMAGE_VIEW_TYPE_2D;
+    }
+}
+
 void transitionImageLayout(VkCommandBuffer cmdbuffer, VulkanLayoutTransition transition) {
     if (transition.oldLayout == transition.newLayout) {
         return;

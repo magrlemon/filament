@@ -21,6 +21,8 @@
 #include "VulkanBuffer.h"
 #include "VulkanUtility.h"
 
+#include <utils/RangeMap.h>
+
 namespace filament {
 namespace backend {
 
@@ -71,13 +73,28 @@ private:
 
     VulkanTexture* mSidecarMSAA = nullptr;
     const VkFormat mVkFormat;
+    const VkImageAspectFlags mAspect;
+    const VkImageViewType mViewType;
     const VkComponentMapping mSwizzle;
-    VkImageViewType mViewType;
     VkImage mTextureImage = VK_NULL_HANDLE;
     VkDeviceMemory mTextureImageMemory = VK_NULL_HANDLE;
+
+    // Track the image layout of each subresource using a sparse range map.
+    utils::RangeMap<uint32_t, VkImageLayout> mSubresourceLayouts;
+    void setLayout(const VkImageSubresourceRange& range, VkImageLayout layout);
+    VkImageLayout getLayout(uint32_t layer, uint32_t level) const;
+    void transitionLayout(VkCommandBuffer commands, const VkImageSubresourceRange& range,
+                VkImageLayout newLayout);
+
+    // TODO: can we get rid of this overload? zamboni
+    void transitionLayout(VkCommandBuffer commands, const VkImageSubresourceRange& range,
+                VkImageLayout oldLayout, VkImageLayout newLayout);
+
+    // Track the range of subresources that define the "primary" image view, which is the special
+    // image view that gets bound to an actual texture sampler.
     VkImageSubresourceRange mPrimaryViewRange;
+
     std::map<VkImageSubresourceRange, VkImageView> mCachedImageViews;
-    VkImageAspectFlags mAspect;
     VulkanContext& mContext;
     VulkanStagePool& mStagePool;
 };
